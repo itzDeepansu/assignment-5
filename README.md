@@ -87,7 +87,7 @@ spotify-2.0-clone/
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/itzDeepansu/assignment-5
 cd assignment-5
 ```
 
