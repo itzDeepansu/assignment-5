@@ -1,103 +1,202 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import PlayerControls from '../components/PlayerControls';
+import Sidebar from '../components/Sidebar';
+import MobileNav from '../components/MobileNav';
+import SearchBar from '../components/SearchBar';
+import SongList from '../components/SongList';
+import PlaylistCard from '../components/PlaylistCard';
+import AlbumCard from '../components/AlbumCard';
+import GenreCard from '../components/GenreCard';
+import { songs, playlists, albums, genres } from '../data/songs';
+import { useMusicPlayer } from '../contexts/MusicPlayerContext';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeView, setActiveView] = useState('home');
+  const [searchResults, setSearchResults] = useState([]);
+  const { playSong } = useMusicPlayer();
+  const [searched,setSearched] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  const handleSearch = (term) => {
+    if (!term) {
+      setSearchResults([]);
+      setSearched(false);
+      return;
+    }
+    setSearched(true);
+    const results = songs.filter((song) =>
+      song.title.toLowerCase().includes(term.toLowerCase()) ||
+      song.artist.toLowerCase().includes(term.toLowerCase()) ||
+      song.album.toLowerCase().includes(term.toLowerCase())
+    );
+    setSearchResults(results);
+  };
+
+  const handlePlaylistClick = (playlist) => {
+    const playlistSongs = songs.filter(song => playlist.songs.includes(song.id));
+    if (playlistSongs.length > 0) {
+      playSong(playlistSongs[0], playlistSongs, 0);
+    }
+  };
+
+  const handleAlbumClick = (album) => {
+    const albumSongs = songs.filter(song => album.songs.includes(song.id));
+    if (albumSongs.length > 0) {
+      playSong(albumSongs[0], albumSongs, 0);
+    }
+  };
+
+  const handleGenreClick = (genre) => {
+    const genreSongs = songs.filter(song => song.genre === genre.name);
+    if (genreSongs.length > 0) {
+      playSong(genreSongs[0], genreSongs, 0);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen text-gray-300 pb-24">
+      <MobileNav activeView={activeView} setActiveView={setActiveView} />
+      
+      <aside className="w-64 p-4 hidden lg:block">
+        <Sidebar activeView={activeView} setActiveView={setActiveView} />
+      </aside>
+      
+      <main className="flex-1 p-6 overflow-y-auto scrollbar-thin pt-32 lg:pt-6">
+        {activeView === 'home' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-6">Welcome to Spotify 2.0</h2>
+              <div className="mb-8">
+                <SearchBar onSearch={handleSearch} />
+              </div>
+            </div>
+            
+            { !searched && <div>
+              <h3 className="text-2xl font-bold text-white mb-4">Featured Playlists</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {playlists.slice(0, 4).map((playlist) => (
+                  <PlaylistCard 
+                    key={playlist.id} 
+                    playlist={playlist} 
+                    onClick={() => handlePlaylistClick(playlist)} 
+                  />
+                ))}
+              </div>
+            </div> } 
+            
+            {! searched && <div>
+              <h3 className="text-2xl font-bold text-white mb-4">Popular Albums</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {albums.slice(0, 4).map((album) => (
+                  <AlbumCard 
+                    key={album.id} 
+                    album={album} 
+                    onClick={() => handleAlbumClick(album)} 
+                  />
+                ))}
+              </div>
+            </div> }
+            
+            {searchResults.length > 0 ? (
+              <div>
+                <SongList songs={searchResults} title="Search Results" />
+              </div>
+            ) : (
+              <div>
+                <SongList songs={songs.slice(0, 10)} title="Trending Songs" />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {activeView === 'search' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-6">Search</h2>
+              <SearchBar onSearch={handleSearch} />
+            </div>
+            {searchResults.length > 0 && (
+              <SongList songs={searchResults} title="Search Results" />
+            )}
+            {searchResults.length === 0 && (
+              <div>
+                <h3 className="text-xl font-bold text-white mb-4">Browse All</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {genres.map((genre) => (
+                    <GenreCard 
+                      key={genre.id} 
+                      genre={genre} 
+                      onClick={() => handleGenreClick(genre)} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {activeView === 'playlists' && (
+          <div>
+            <h2 className="text-3xl font-bold text-white mb-6">Your Playlists</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {playlists.map((playlist) => (
+                <PlaylistCard 
+                  key={playlist.id} 
+                  playlist={playlist} 
+                  onClick={() => handlePlaylistClick(playlist)} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {activeView === 'albums' && (
+          <div>
+            <h2 className="text-3xl font-bold text-white mb-6">Albums</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {albums.map((album) => (
+                <AlbumCard 
+                  key={album.id} 
+                  album={album} 
+                  onClick={() => handleAlbumClick(album)} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {activeView === 'genres' && (
+          <div>
+            <h2 className="text-3xl font-bold text-white mb-6">Browse by Genre</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+              {genres.map((genre) => (
+                <GenreCard 
+                  key={genre.id} 
+                  genre={genre} 
+                  onClick={() => handleGenreClick(genre)} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {activeView === 'favorites' && (
+          <div>
+            <SongList songs={songs} title="Your Favorite Songs" />
+          </div>
+        )}
+        
+        {activeView === 'library' && (
+          <div>
+            <SongList songs={songs} title="Your Library" />
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+        <PlayerControls />
+      </div>
     </div>
   );
 }
